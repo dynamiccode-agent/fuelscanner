@@ -15,6 +15,7 @@ const FUEL_SHORT: Record<string, string> = {
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-AU', {
     hour: '2-digit', minute: '2-digit', hour12: true,
+    timeZone: 'Australia/Melbourne',
   });
 }
 
