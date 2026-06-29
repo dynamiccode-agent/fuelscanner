@@ -12,6 +12,16 @@ const FUEL_SHORT: Record<string, string> = {
   AdBlue: 'AdBlue', E85: 'E85', Biodiesel: 'BIO', TruckDiesel: 'T·DSL',
 };
 
+function getLmctPrices() {
+  return {
+    U91: process.env.FUEL_PRICE_91 ?? null,
+    U95: process.env.FUEL_PRICE_95 ?? null,
+    U98: process.env.FUEL_PRICE_98 ?? null,
+    Diesel: process.env.FUEL_PRICE_DIESEL ?? null,
+    updatedAt: process.env.FUEL_PRICES_UPDATED ?? null,
+  };
+}
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-AU', {
     hour: '2-digit', minute: '2-digit', hour12: true,
@@ -87,6 +97,7 @@ function StationCard({
 
 export default async function Home() {
   const data = await getData();
+  const lmctPrices = getLmctPrices();
 
   const byU91 = data?.stations
     ? [...data.stations].sort((a, b) => {
@@ -130,6 +141,28 @@ export default async function Home() {
           <p className="site-header__sub">
             Preston &amp; surrounds · 5 km radius · VIC
           </p>
+
+          {(lmctPrices.U91 || lmctPrices.U95 || lmctPrices.U98 || lmctPrices.Diesel) && (
+            <div className="member-prices" aria-label="LMCT+ member prices">
+              <span className="member-prices__label">Member</span>
+              {([
+                ['U91', lmctPrices.U91],
+                ['U95', lmctPrices.U95],
+                ['U98', lmctPrices.U98],
+                ['DSL', lmctPrices.Diesel],
+              ] as [string, string | null][]).filter(([, v]) => v !== null).map(([label, price]) => (
+                <div key={label} className="member-price-item">
+                  <span className="member-price-item__type">{label}</span>
+                  <span className="member-price-item__price">{price}¢</span>
+                </div>
+              ))}
+              {lmctPrices.updatedAt && (
+                <span className="member-prices__updated">
+                  upd {formatTime(lmctPrices.updatedAt)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="site-header__right">
           <span className={`live-pill ${pillClass}`}>
@@ -215,6 +248,7 @@ export default async function Home() {
             ['GET /api/prices?fuel=Diesel', 'Diesel prices only'],
             ['GET /api/health', 'Service status + last sync time'],
             ['GET /api/sync', 'Trigger manual sync (Bearer token required)'],
+            ['GET /api/lmct-prices', 'LMCT+ member prices (U91, U95, U98, Diesel)'],
           ] as [string, string][]).map(([ep, desc]) => (
             <div key={ep} className="api-ref__row">
               <code className="api-ref__code">{ep}</code>
